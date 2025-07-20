@@ -7,11 +7,15 @@ import {
   DeleteOutlined,
   DragOutlined,
   HighlightOutlined,
+  RedoOutlined, // Using a repeat/redo icon for recurrence
 } from "@ant-design/icons";
 import Context from "../context/Context.jsx";
 import { labels } from "../utils/LabelsClass.js";
+import EventFormBody from "./EventFormBody.jsx";
 
 const EventForm = () => {
+  const { setShowEventForm, daySelected, dispatchCalEvent, selectedEvent } =
+    useContext(Context);
 
   const labelColorMap = {
     indigo: "bg-indigo-500",
@@ -20,16 +24,14 @@ const EventForm = () => {
     blue: "bg-blue-500",
     red: "bg-red-500",
     purple: "bg-purple-500",
-};
+  };
 
-  const { setShowEventForm, daySelected, dispatchCalEvent, selectedEvent } =
-    useContext(Context);
+  // --- EXISTING STATE ---
   const [title, setTitle] = useState(selectedEvent ? selectedEvent.title : "");
   const [desc, setDesc] = useState(selectedEvent ? selectedEvent.desc : "");
   const [label, setLabel] = useState(
     selectedEvent ? labels.find((l) => l === selectedEvent.label) : labels[0]
   );
-  // 1. Use two state variables for the time range
   const [fromTime, setFromTime] = useState(
     selectedEvent ? selectedEvent.fromTime : "09:00"
   );
@@ -37,16 +39,30 @@ const EventForm = () => {
     selectedEvent ? selectedEvent.toTime : "10:00"
   );
 
+  // --- 1. STATE FOR RECURRENCE ---
+  const initialRecurrence = {
+    frequency: 'NONE', // Can be NONE, DAILY, WEEKLY, MONTHLY
+    interval: 1,
+    byday: [], // For weekly: ['MO', 'TU', etc.]
+    until: null,
+  };
+  const [recurrence, setRecurrence] = useState(
+      selectedEvent?.recurrence || initialRecurrence
+  );
+
+  // --- 2. UPDATE SUBMIT HANDLER ---
   const handleSubmit = (e) => {
     e.preventDefault();
     const calendarEvent = {
       title,
       desc,
       label: label,
-      day: daySelected.valueOf(),
-      fromTime: fromTime,
-      toTime: toTime,
+      day: daySelected.valueOf(), // This is the START date of the event/series
+      fromTime,
+      toTime,
       id: selectedEvent ? selectedEvent.id : Date.now(),
+      // Add the recurrence rule to the payload if it's not 'NONE'
+      recurrence: recurrence.frequency !== 'NONE' ? recurrence : null,
     };
 
     if (selectedEvent) {
@@ -57,25 +73,39 @@ const EventForm = () => {
     setShowEventForm(false);
   };
 
+  const handleRecurrenceChange = (key, value) => {
+      setRecurrence(prev => ({...prev, [key]: value}));
+  };
+
+  const toggleWeekday = (day) => {
+      const currentDays = recurrence.byday;
+      const newDays = currentDays.includes(day)
+          ? currentDays.filter(d => d !== day)
+          : [...currentDays, day];
+      handleRecurrenceChange('byday', newDays);
+  }
+
   return (
-    <div className="h-screen w-full fixed top-0 left-0 flex justify-center items-center">
-      <form className="bg-white rounded-lg shadow-2xl w-full max-w-md">
+    <div className="h-screen w-full fixed top-0 left-0 flex justify-center items-center bg-black bg-opacity-40 z-50">
+      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-2xl w-full max-w-md">
         <header
           className={`${labelColorMap[label]} px-4 py-2 flex justify-between items-center rounded-t-lg`}
         >
           <span className="text-gray-100 cursor-grab">
             <DragOutlined />
           </span>
-          <div className="flex gap-2">
+          <div className="flex gap-x-3 items-center">
             {selectedEvent && (
-              <span
+              <button
+                type="button"
                 onClick={() => {
                   dispatchCalEvent({ type: "delete", payload: selectedEvent });
                   setShowEventForm(false);
                 }}
-                className="text-gray-100 hover:text-gray-300 cursor-pointer">
+                className="text-gray-100 hover:text-gray-300 cursor-pointer"
+              >
                 <DeleteOutlined />
-              </span>
+              </button>
             )}
             <button type="button" onClick={() => setShowEventForm(false)}>
               <span className="text-gray-100 hover:text-gray-300 cursor-pointer">
@@ -84,84 +114,41 @@ const EventForm = () => {
             </button>
           </div>
         </header>
-        <div className="p-5">
-          <div className="space-y-6">
-            <input
-              type="text"
-              name="title"
-              placeholder="Add title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              className="pt-3 border-0 text-gray-700 text-xl font-semibold pb-2 w-full border-b-2 border-gray-200 focus:outline-none focus:ring-0 focus:border-red-500"
-            />
-            {/* 2. Add two input fields for the time range */}
-            <div className="flex items-center gap-x-3">
-              <span className="text-gray-400">
-                <ClockCircleOutlined />
-              </span>
-              <p className="text-gray-700 font-medium">
-                {daySelected.format("dddd, MMMM DD")}
-              </p>
-              <div className="ml-auto flex items-center gap-x-2">
-                <input
-                  type="time"
-                  name="fromTime"
-                  value={fromTime}
-                  onChange={(e) => setFromTime(e.target.value)}
-                  className="p-1 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <span>-</span>
-                <input
-                  type="time"
-                  name="toTime"
-                  value={toTime}
-                  onChange={(e) => setToTime(e.target.value)}
-                  className="p-1 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-x-3">
-              <span className="text-gray-400">
-                <AlignLeftOutlined />
-              </span>
-              <input
-                type="text"
-                name="desc"
-                placeholder="Description"
-                value={desc}
-                onChange={(e) => setDesc(e.target.value)}
-                required
-                className="pt-3 border-0 text-gray-700 text-md pb-2 w-full border-b-2 border-gray-200 focus:outline-none focus:ring-0 focus:border-red-500"
-              />
-            </div>
-          </div>
-        </div>
 
-        <div className="flex items-center justify-center gap-2 py-3">
-          <span className="text-gray-400">
-            <HighlightOutlined />
-          </span>
+        <EventFormBody
+          title={title}
+          setTitle={setTitle}
+          daySelected={daySelected}
+          fromTime={fromTime}
+          setFromTime={setFromTime}
+          toTime={toTime}
+          setToTime={setToTime}
+          desc={desc}
+          setDesc={setDesc}
+          recurrence={recurrence}
+          handleRecurrenceChange={handleRecurrenceChange}
+          toggleWeekday={toggleWeekday}
+        />
+
+        <div className="flex items-center justify-center gap-x-3 py-4 border-t">
+          <span className="text-gray-400"><HighlightOutlined /></span>
           {labels.map((l, i) => (
             <span
               key={i}
               onClick={() => setLabel(l)}
-              className={`${labelColorMap[l]} w-6 h-6 rounded-full flex items-center justify-center cursor-pointer`}
+              className={`${labelColorMap[l]} w-6 h-6 rounded-full flex items-center justify-center cursor-pointer border-2 ${label === l ? 'border-gray-800' : 'border-transparent'}`}
             >
               {label === l && (
-                <span className="text-white text-sm">
-                  <CheckCircleOutlined />
-                </span>
+                <span className="text-white text-sm"><CheckCircleOutlined /></span>
               )}
             </span>
           ))}
         </div>
 
-        <footer className="flex justify-end p-3 mt-5">
+        <footer className="flex justify-end p-3 border-t">
           <button
-            onClick={handleSubmit}
             type="submit"
-            className={`${labelColorMap[label]} hover:${labelColorMap[label]} px-6 py-2 rounded-md text-white font-semibold`}
+            className={`${labelColorMap[label]} px-6 py-2 rounded-md text-white font-semibold`}
           >
             Save
           </button>
