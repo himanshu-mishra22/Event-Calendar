@@ -7,11 +7,12 @@ import CalendarHeader from './components/CalendarHeader'
 import Sidebar from './components/Sidebar'
 import Month from './components/Month'
 import Context from './context/Context'
+import EventForm from './components/EventForm'
 
 function App() {
   // console.table(getMonth(3))
   const [currMonth,setCurrMonth] = useState(getMonth());
-  const {monthIdx}= useContext(Context);
+  const {monthIdx,showEventForm}= useContext(Context);
 
   useEffect(()=>{
     // console.error(monthIdx);
@@ -20,6 +21,7 @@ function App() {
 
   return (
    <>
+   {showEventForm && <EventForm/>}
     <div className='h-screen flex flex-col'>
       <CalendarHeader/>
       <div className='flex flex-1'>

@@ -1,8 +1,12 @@
 import React from 'react'
+import CreateEvent from './CreateEvent'
 
 const Sidebar = () => {
   return (
-    <div>Sidebar</div>
+    <aside className='border p-5 w-48'>
+      <CreateEvent/>
+
+    </aside>
   )
 }
 
