@@ -6,7 +6,11 @@ const Context = createContext({
     daySelected: null,
     setDaySelected:(day)=>{},
     showEventForm:false,
-    setShowEventForm : ()=> {}
+    setShowEventForm : ()=> {},
+    dispatchCalEvent: ({type,payload}) => {},
+    savedEvent:[],
+    selectedEvent:null,
+    setSelectedEvent:()=>{}
 })
 
 export default Context
