@@ -3,16 +3,26 @@ import React, { useContext, useEffect, useState } from "react";
 import Context from "../context/Context.jsx";
 
 const Day = ({ day, rowIdx }) => {
+
+  const labelColorMap = {
+    indigo: "bg-indigo-300",
+    gray: "bg-gray-300",
+    green: "bg-green-300",
+    blue: "bg-blue-300",
+    red: "bg-red-300",
+    purple: "bg-purple-300",
+};
+
   const [dayEvents, setDayEvents] = useState([]);
-  const { daySelected, setDaySelected, setShowEventForm, savedEvents,setSelectedEvent } =
+  const { daySelected, setDaySelected, setShowEventForm,filterEvents,setSelectedEvent } =
     useContext(Context);
 
   useEffect(() => {
-    const events = savedEvents.filter(
+    const events = filterEvents.filter(
       (evt) => dayjs(evt.day).format("DD-MM-YY") === day.format("DD-MM-YY")
     );
     setDayEvents(events);
-  }, [savedEvents]);
+  }, [filterEvents]);
 
   const getDayClass = () => {
     const format = "DD-MM-YY";
@@ -53,7 +63,7 @@ const Day = ({ day, rowIdx }) => {
           <div
             key={idx}
             onClick={()=>setSelectedEvent(evt)}
-            className={`bg-${evt.label}-200 p-1 mr-3 text-gray-600 text-sm rounde mb-1 truncate`}
+            className={`${labelColorMap[evt.label]} p-1 mr-3 text-gray-600 text-sm rounde mb-1 truncate`}
           >
             {evt.title}
           </div>

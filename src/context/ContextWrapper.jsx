@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useState } from "react";
+import React, { useEffect, useMemo, useReducer, useState } from "react";
 import Context from "./Context";
 import dayjs from "dayjs";
 
@@ -26,15 +26,41 @@ const ContextWrapper = ({ children }) => {
   const [daySelected, setDaySelected] = useState(null);
   const [showEventForm, setShowEventForm] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [labels,setLabels] = useState([]);
   const [savedEvents, dispatchCalEvent] = useReducer(
     savedEventsReducer,
     [],
     initEvents
   );
 
+  const filterEvents = useMemo(()=>{
+    return savedEvents.filter(e => labels.filter(l => l.checked)
+    .map(l =>l.label )
+    .includes(e.label))
+  } ,[savedEvents,labels])
+
   useEffect(() => {
     localStorage.setItem("savedEvents", JSON.stringify(savedEvents));
   }, [savedEvents]);
+
+  useEffect(() => {
+    setLabels((prev)=>{
+      return [...new Set(savedEvents.map(evt=>evt.label))].map(label => {
+        const currLabel = prev.find(l => l.label === label)
+        return {
+          label,
+          checked: currLabel ? currLabel.checked: true
+        };
+      })
+    })
+  }, [savedEvents]);
+
+  function updateLabel(label){
+    setLabels(labels.map((l) =>(l.label === label.label ? label : l)))
+  }
+
+
+
   return (
     <Context.Provider
       value={{
@@ -47,7 +73,11 @@ const ContextWrapper = ({ children }) => {
         savedEvents,
         dispatchCalEvent,
         selectedEvent,
-        setSelectedEvent
+        setSelectedEvent,
+        setLabels,
+        labels,
+        updateLabel,
+        filterEvents
       }}
     >
       {children}

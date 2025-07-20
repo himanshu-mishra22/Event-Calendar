@@ -10,7 +10,11 @@ const Context = createContext({
     dispatchCalEvent: ({type,payload}) => {},
     savedEvent:[],
     selectedEvent:null,
-    setSelectedEvent:()=>{}
+    setSelectedEvent:()=>{},
+    labels:[],
+    setLabels:()=>{},
+    updateLabel:()=>{},
+    filterEvents:[]
 })
 
 export default Context
