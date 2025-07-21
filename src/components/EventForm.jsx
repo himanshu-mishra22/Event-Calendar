@@ -1,13 +1,10 @@
 import React, { useState, useContext } from "react";
 import {
-  AlignLeftOutlined,
   CheckCircleOutlined,
-  ClockCircleOutlined,
   CloseCircleOutlined,
   DeleteOutlined,
   DragOutlined,
   HighlightOutlined,
-  RedoOutlined, // Using a repeat/redo icon for recurrence
 } from "@ant-design/icons";
 import Context from "../context/Context.jsx";
 import { labels } from "../utils/LabelsClass.js";
@@ -26,7 +23,6 @@ const EventForm = () => {
     purple: "bg-purple-500",
   };
 
-  // --- EXISTING STATE ---
   const [title, setTitle] = useState(selectedEvent ? selectedEvent.title : "");
   const [desc, setDesc] = useState(selectedEvent ? selectedEvent.desc : "");
   const [label, setLabel] = useState(
@@ -39,29 +35,26 @@ const EventForm = () => {
     selectedEvent ? selectedEvent.toTime : "10:00"
   );
 
-  // --- 1. STATE FOR RECURRENCE ---
   const initialRecurrence = {
-    frequency: 'NONE', // Can be NONE, DAILY, WEEKLY, MONTHLY
+    frequency: 'NONE',
     interval: 1,
-    byday: [], // For weekly: ['MO', 'TU', etc.]
+    byday: [], 
     until: null,
   };
   const [recurrence, setRecurrence] = useState(
       selectedEvent?.recurrence || initialRecurrence
   );
 
-  // --- 2. UPDATE SUBMIT HANDLER ---
   const handleSubmit = (e) => {
     e.preventDefault();
     const calendarEvent = {
       title,
       desc,
       label: label,
-      day: daySelected.valueOf(), // This is the START date of the event/series
+      day: daySelected.valueOf(),
       fromTime,
       toTime,
       id: selectedEvent ? selectedEvent.id : Date.now(),
-      // Add the recurrence rule to the payload if it's not 'NONE'
       recurrence: recurrence.frequency !== 'NONE' ? recurrence : null,
     };
 

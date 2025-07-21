@@ -3,7 +3,6 @@ import React, { useContext, useEffect, useState } from "react";
 import Context from "../context/Context.jsx";
 
 const Day = ({ day, rowIdx }) => {
-  // Using more vibrant colors for better visibility
   const labelColorMap = {
     indigo: "bg-indigo-500",
     gray: "bg-gray-500",
@@ -14,49 +13,77 @@ const Day = ({ day, rowIdx }) => {
   };
 
   const [dayEvents, setDayEvents] = useState([]);
-  // 1. Get allVisibleEvents from context instead of filterEvents
+  const [isDragOver, setIsDragOver] = useState(false);
+
   const {
     daySelected,
     setDaySelected,
     setShowEventForm,
-    allVisibleEvents, // Use the new array with all occurrences
+    allVisibleEvents,
     setSelectedEvent,
+    dispatchCalEvent,
+    draggedEvent,
+    setDraggedEvent,
   } = useContext(Context);
 
-  // 2. Filter allVisibleEvents to find events for this specific day
   useEffect(() => {
     const events = allVisibleEvents.filter(
       (evt) => dayjs(evt.day).format("DD-MM-YY") === day.format("DD-MM-YY")
     );
     setDayEvents(events);
-  }, [allVisibleEvents, day]); // Depend on allVisibleEvents and the current day
+  }, [allVisibleEvents, day]);
 
-  // 3. Improved styling logic to prioritize selected day
   const getDayClass = () => {
     const format = "DD-MM-YY";
-    const isSelected =
-      daySelected && day.format(format) === daySelected.format(format);
+    const isSelected = daySelected && day.format(format) === daySelected.format(format);
     const isToday = day.format(format) === dayjs().format(format);
-
-    if (isSelected) {
-      // Selected style takes priority
-      return "bg-blue-500 text-white rounded-full w-7 font-bold";
-    }
-    if (isToday) {
-      return "bg-gray-200 text-gray-800 rounded-full w-7";
-    }
+    if (isSelected) return "bg-blue-500 text-white rounded-full w-7 font-bold";
+    if (isToday) return "bg-gray-200 text-gray-800 rounded-full w-7";
     return "";
   };
 
+  const handleDragStart = (e, evt) => {
+    if (evt.isOccurrence) {
+        e.preventDefault();
+        return;
+    }
+    setDraggedEvent(evt);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (!draggedEvent) return;
+
+    const updatedEvent = {
+      ...draggedEvent,
+      day: day.valueOf(),
+    };
+
+    dispatchCalEvent({ type: "update", payload: updatedEvent });
+    setDraggedEvent(null); 
+  };
+
   return (
-    // 4. Changed from <button> to <div> for better structure
     <div
-      className="border border-gray-200 flex flex-col cursor-pointer"
+      className={`border border-gray-200 flex flex-col cursor-pointer transition-colors ${isDragOver ? 'bg-gray-100' : ''}`}
       onClick={() => {
         setDaySelected(day);
         setShowEventForm(true);
-        setSelectedEvent(null); // Ensure we're creating a new event
+        setSelectedEvent(null);
       }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       <header className="flex flex-col items-center">
         {rowIdx === 0 && (
@@ -70,15 +97,14 @@ const Day = ({ day, rowIdx }) => {
         {dayEvents.map((evt, idx) => (
           <div
             key={idx}
+            draggable={!evt.isOccurrence} 
+            onDragStart={(e) => handleDragStart(e, evt)}
             onClick={(e) => {
-              e.stopPropagation(); // Prevent opening a new event form
+              e.stopPropagation();
               setSelectedEvent(evt);
               setShowEventForm(true);
             }}
-            // Fixed typo: rounde -> rounded
-            className={`${
-              labelColorMap[evt.label]
-            } p-1 mr-1 text-white text-xs rounded mb-1 truncate`}
+            className={`${labelColorMap[evt.label]} p-1 mr-1 text-white text-xs rounded mb-1 truncate ${!evt.isOccurrence ? 'cursor-grab' : 'cursor-not-allowed'}`}
           >
             {evt.title}
           </div>

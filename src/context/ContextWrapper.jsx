@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useReducer, useState } from "react";
 import Context from "./Context";
 import dayjs from "dayjs";
 import { RRule } from 'rrule';
-import { getMonth } from "../utils/utils.js"; // Make sure you have this utility
+import { getMonth } from "../utils/utils.js";
 
 function savedEventsReducer(state, { type, payload }) {
   switch (type) {
@@ -29,6 +29,7 @@ const ContextWrapper = ({ children }) => {
   const [showEventForm, setShowEventForm] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [labels, setLabels] = useState([]);
+  const [draggedEvent, setDraggedEvent] = useState(null);
   const [savedEvents, dispatchCalEvent] = useReducer(
     savedEventsReducer,
     [],
@@ -38,8 +39,7 @@ const ContextWrapper = ({ children }) => {
   useEffect(() => {
     localStorage.setItem("savedEvents", JSON.stringify(savedEvents));
   }, [savedEvents]);
-
-  // This logic creates the dynamic list of labels based on saved events
+  
   useEffect(() => {
     setLabels((prevLabels) => {
       return [...new Set(savedEvents.map((evt) => evt.label))].map((label) => {
@@ -52,7 +52,6 @@ const ContextWrapper = ({ children }) => {
     });
   }, [savedEvents]);
 
-  // Renamed to filteredByLabelEvents for clarity
   const filteredByLabelEvents = useMemo(() => {
     return savedEvents.filter((evt) =>
       labels
@@ -65,18 +64,15 @@ const ContextWrapper = ({ children }) => {
   const allVisibleEvents = useMemo(() => {
     const events = [];
     const month = getMonth(monthIdx);
-    // Get the very first and last day of the 6-week month view
     const firstDayOfMonth = month[0][0].toDate();
     const lastDayOfMonth = month[month.length - 1][6].endOf('day').toDate();
 
     filteredByLabelEvents.forEach(event => {
-      // If it's a normal, non-recurring event, just add it
+      // console.log(event);
       if (!event.recurrence) {
         events.push(event);
         return;
       }
-
-      // It IS a recurring event, so generate its occurrences
       const rule = new RRule({
         freq: RRule[event.recurrence.frequency],
         interval: event.recurrence.interval,
@@ -85,13 +81,13 @@ const ContextWrapper = ({ children }) => {
         until: event.recurrence.until ? new Date(event.recurrence.until) : null,
       });
 
-      // Get all occurrences that fall between the first and last day of the visible month
       rule.between(firstDayOfMonth, lastDayOfMonth).forEach(date => {
-        // Create a "virtual" event for each occurrence
+        // console.log(date);
+        
         events.push({
           ...event,
-          day: date.getTime(), // CRITICAL: Override the date with the occurrence date
-          isOccurrence: true, // Flag to identify this as a virtual event
+          day: date.getTime(),
+          isOccurrence: true,
         });
       });
     });
@@ -122,6 +118,8 @@ const ContextWrapper = ({ children }) => {
         labels,
         updateLabel,
         allVisibleEvents,
+        draggedEvent,
+        setDraggedEvent,
       }}
     >
       {children}
