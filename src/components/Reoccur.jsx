@@ -13,9 +13,7 @@ const Reoccur = ({ recurrence, handleRecurrenceChange, toggleWeekday }) => {
           className="p-2 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
         >
           <option value="NONE">Does not repeat</option>
-          <option value="DAILY">Daily</option>
-          <option value="WEEKLY">Weekly</option>
-          <option value="MONTHLY">Monthly</option>
+          <option value="DAILY">Interval</option>
         </select>
       </div>
       {recurrence.frequency === 'WEEKLY' && (
